@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Red & Black XV Match Tracker</title>
+<style>
+:root{--black:#101114;--red:#a31621;--paper:#f5f5f3;--card:#fff;--line:#c9c9c6;--muted:#666;--green:#176b3a}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--paper);color:var(--black)}
+header{background:var(--black);color:white;padding:12px 16px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand b{font-size:18px}.tabs{display:flex;gap:6px;margin-top:10px;overflow:auto}
+.tabs button{white-space:nowrap}.wrap{max-width:1180px;margin:auto;padding:12px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:2px solid var(--black);border-radius:12px;padding:12px;margin-bottom:12px}
+h2,h3{margin:0 0 10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+label{font-size:12px;font-weight:700;display:block}input,select,button,textarea{font:inherit;font-size:16px}
+input,select,textarea{width:100%;min-height:44px;border:1.5px solid #777;border-radius:8px;padding:8px;background:white}
+button{min-height:44px;border:1.5px solid var(--black);border-radius:8px;background:white;font-weight:700;padding:8px 12px;touch-action:manipulation}
+button.primary{background:var(--red);color:white;border-color:var(--red)}button.dark{background:var(--black);color:white}
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;background:var(--black);color:white;border-radius:14px;padding:14px;margin-bottom:12px}
+.teamname{font-weight:800;font-size:13px}.score{font-size:56px;font-weight:900;line-height:1}.dash{font-size:32px;font-weight:900;padding:0 12px}
+.meta{text-align:center;font-size:12px;margin-top:6px;color:#ddd}.section-title{background:var(--black);color:white;padding:8px 10px;border-radius:8px;font-weight:800;margin-bottom:8px}
+.counter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.counter{border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.counter-name{font-size:12px;font-weight:800;margin-bottom:6px}.counter-row{display:grid;grid-template-columns:46px 1fr 46px;gap:5px;align-items:center}
+.counter-row button{font-size:24px;padding:0}.counter-row .plus{background:var(--red);color:white;border-color:var(--red)}.count{text-align:center;font-size:24px;font-weight:900}
+.log{max-height:220px;overflow:auto}.logrow{padding:7px 3px;border-bottom:1px solid #ddd;font-size:13px}
+.small{font-size:12px;color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #bbb;padding:6px;text-align:left}th{background:#ececea}
+.squadrow{display:grid;grid-template-columns:52px 1fr;gap:6px;margin-bottom:6px}.award-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.report-score{text-align:center;font-size:34px;font-weight:900;margin:8px 0}.success{color:var(--green);font-weight:800}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.score{font-size:44px}.counter-grid{grid-template-columns:1fr 1fr}.award-grid{grid-template-columns:1fr}.wrap{padding:8px}.card{padding:10px}.tabs button{min-height:40px}}
+@media print{header,.no-print{display:none!important}.page{display:none!important}#report.page{display:block!important}.card{break-inside:avoid;border:1px solid #555}body{background:white}.wrap{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><b>RED & BLACK XV · MATCH TRACKER</b><span id="saveState" class="small" style="color:#ddd">Saved locally</span></div>
+ <div class="tabs">
+  <button data-page="setup">SETUP</button><button data-page="live" class="primary">LIVE MATCH</button><button data-page="stats">STATS</button><button data-page="report">FULL TIME REPORT</button>
+ </div>
+</header>
+<div class="wrap">
+<section id="setup" class="page active">
+ <div class="card"><h2>Match Setup</h2>
+  <div class="grid3">
+   <label>Our team<input id="ourTeam" value="Red & Black XV"></label>
+   <label>Opponent<input id="opponent" placeholder="Opponent"></label>
+   <label>Date<input id="matchDate" type="date"></label>
+  </div>
+ </div>
+ <div class="card"><h2>Squad 1–23</h2><p class="small">Change any name before the match. Numbers 1–15 are starters; 16–23 are the bench.</p><div id="squad"></div>
+  <button id="startMatch" class="primary" style="width:100%;margin-top:8px">SAVE TEAM & START MATCH</button>
+ </div>
+ <div class="card no-print"><h3>Match Data</h3><p class="small">This version saves the current match in this browser on this iPad. Use Export Backup after the match if you want an extra copy.</p>
+  <div class="grid3"><button id="exportBackup">EXPORT BACKUP</button><button id="importBackup">IMPORT BACKUP</button><button id="newMatch">NEW MATCH</button></div>
+  <input id="backupFile" type="file" accept=".json,application/json" style="display:none">
+ </div>
+</section>
+
+<section id="live" class="page">
+ <div class="scoreboard">
+  <div><div id="ourNameTop" class="teamname">RED & BLACK XV</div><div id="ourScore" class="score">0</div></div>
+  <div><div class="dash">—</div><div class="meta">HT <b id="htTop">—</b></div></div>
+  <div><div id="oppNameTop" class="teamname">OPPONENT</div><div id="oppScore" class="score">0</div></div>
+ </div>
+ <div class="grid2">
+  <div>
+   <div class="card">
+    <div class="section-title">SCORING</div>
+    <div class="grid3">
+     <label>Minute<input id="scoreMin" type="number" min="0" max="120" value="0"></label>
+     <label>Team<select id="scoreTeam"><option value="us">Red & Black XV</option><option value="opp">Opponent</option></select></label>
+     <label>Score<select id="scoreType"><option value="try">Try</option><option value="penalty">Penalty kick</option></select></label>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+     <label>Scorer / kicker<select id="scorer"></select></label>
+     <label id="convWrap">Conversion<select id="conversion"><option value="missed">Not converted</option><option value="made">Converted</option></select></label>
+    </div>
+    <label id="kickerWrap" style="margin-top:8px">Converted by<select id="kicker"></select></label>
+    <button id="addScore" class="primary" style="width:100%;margin-top:10px">ADD SCORE</button>
+    <div style="display:flex;gap:6px;margin-top:6px"><button id="setHT" style="flex:1">SET HALFTIME</button><button id="undoScore" style="flex:1">UNDO LAST SCORE</button></div>
+    <div id="scoreLog" class="log" style="margin-top:8px"></div>
+   </div>
+   <div class="card">
+    <div class="section-title">SUBSTITUTIONS</div>
+    <div class="grid3"><label>Minute<input id="subMin" type="number" min="0" max="120" value="0"></label><label>Going OFF<select id="subOff"></select></label><label>Coming ON<select id="subOn"></select></label></div>
+    <button id="addSub" class="dark" style="width:100%;margin-top:8px">ADD SUB</button><div id="subLog" class="log" style="margin-top:8px"></div>
+   </div>
+  </div>
+  <div>
+   <div class="card"><div class="section-title">QUICK STATS · TAP +</div><div id="setPieceCounters" class="counter-grid"></div></div>
+   <div class="card"><div class="section-title">PENALTIES</div><div id="penaltyForCounter"></div><h3 style="font-size:13px;margin-top:12px">AGAINST · BY REASON</h3><div id="penaltyCounters" class="counter-grid"></div></div>
+  </div>
+ </div>
+ <div class="card">
+  <div class="award-grid"><label>MVP<select id="mvp"></select></label><label>Best Forward<select id="bestForward"></select></label><label>Best Back<select id="bestBack"></select></label></div>
+  <button id="processFT" class="primary" style="width:100%;margin-top:12px;font-size:18px">FULL TIME · PROCESS MATCH</button>
+ </div>
+</section>
+
+<section id="stats" class="page">
+ <div class="card"><h2>Team Statistics</h2><div id="teamStats"></div></div>
+ <div class="card"><h2>Player & Kicker Statistics</h2><div style="overflow:auto"><table><thead><tr><th>Player</th><th>Tries</th><th>Conv.</th><th>Conv Att.</th><th>PK</th><th>PK Att.</th><th>Points</th><th>Kick %</th></tr></thead><tbody id="playerStats"></tbody></table></div></div>
+</section>
+
+<section id="report" class="page">
+ <div class="card"><h2>Full Time Match Report</h2><div id="reportBody"><p class="small">Press “FULL TIME · PROCESS MATCH” when the match is complete.</p></div></div>
+ <div class="grid3 no-print"><button id="printReport" class="dark">PRINT / SAVE PDF</button><button id="exportCSV">EXPORT STATS CSV</button><button id="exportBackup2">EXPORT BACKUP</button></div>
+</section>
+</div>
+<script>
+(()=>{
+const defaultPlayers=["1 - Duan", "2 - Luan", "3 - Dirk", "4 - Attie", "5 - Mocci", "6 - AJ", "7 - Luan", "8 - Janru", "9 - Evin", "10 - Cayden", "11 - Juan", "12 - Timmy", "13 - Boeta", "14 - Willem", "15 - Kosie", "16 - Stassen", "17 - Jethro", "18 - Adriaan", "19 - Franjo", "20 - Marcelle", "21 - Sonny", "22 - Darryl", "23 - Ridaah"];
+const reasons=['Scrum','Not rolling away','Offside','Tackle','High tackle','Hands in ruck','Holding on','Maul','Lineout','Other'];
+const counterNames=['Scrum won','Scrum lost','Lineout won','Lineout lost'];
+const KEY='redBlackXV_match_v1';
+let state={ourTeam:'Red & Black XV',opponent:'Opponent',date:'',players:[...defaultPlayers],scores:[],subs:[],counters:{},ht:null,awards:{mvp:'',forward:'',back:''},finalized:false};
+const $=id=>document.getElementById(id);
+function blankCounters(){[...counterNames,'Penalties for',...reasons.map(x=>'Penalty: '+x)].forEach(x=>{if(state.counters[x]==null)state.counters[x]=0})}
+function save(){state.ourTeam=$('ourTeam').value||'Red & Black XV';state.opponent=$('opponent').value||'Opponent';state.date=$('matchDate').value;localStorage.setItem(KEY,JSON.stringify(state));$('saveState').textContent='Saved locally · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)state={...state,...x}}catch(e){}blankCounters()}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');renderAll()}
+document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+function playerLabel(i){return (state.players[i]||('Player '+(i+1)))}
+function renderSquad(){const box=$('squad');box.innerHTML='';state.players.forEach((name,i)=>{const row=document.createElement('div');row.className='squadrow';row.innerHTML='<input value="'+(i+1)+'" disabled><input data-player="'+i+'" value="'+String(name).replace(/"/g,'&quot;')+'">';box.appendChild(row)});box.querySelectorAll('[data-player]').forEach(inp=>inp.addEventListener('input',e=>{state.players[+e.target.dataset.player]=e.target.value;save()}))}
+function fillSelect(el,inds,includeOpponent=false){const old=el.value;el.innerHTML='';inds.forEach(i=>{const o=document.createElement('option');o.value=String(i);o.textContent=playerLabel(i);el.appendChild(o)});if(includeOpponent){const o=document.createElement('option');o.value='opp';o.textContent='OPPONENT';el.appendChild(o)};if([...el.options].some(o=>o.value===old))el.value=old}
+function scoringOptions(){const opp=$('scoreTeam').value==='opp';if(opp){fillSelect($('scorer'),[],true);fillSelect($('kicker'),[],true)}else{fillSelect($('scorer'),state.players.map((_,i)=>i));fillSelect($('kicker'),state.players.map((_,i)=>i))}}
+function awardOptions(){['mvp','bestForward','bestBack'].forEach(id=>fillSelect($(id),state.players.map((_,i)=>i)));if(state.awards.mvp)$('mvp').value=state.awards.mvp;if(state.awards.forward)$('bestForward').value=state.awards.forward;if(state.awards.back)$('bestBack').value=state.awards.back}
+function scoreTotals(){let us=0,opp=0;state.scores.forEach(s=>{if(s.side==='us')us+=s.points;else opp+=s.points});return [us,opp]}
+function renderScore(){const [us,opp]=scoreTotals();$('ourScore').textContent=us;$('oppScore').textContent=opp;$('ourNameTop').textContent=state.ourTeam.toUpperCase();$('oppNameTop').textContent=state.opponent.toUpperCase();$('htTop').textContent=state.ht?state.ht[0]+'–'+state.ht[1]:'—';$('scoreLog').innerHTML=state.scores.slice().reverse().map(s=>'<div class="logrow"><b>'+s.min+'′</b> · '+(s.side==='us'?state.ourTeam:state.opponent)+' · '+s.desc+'</div>').join('')||'<div class="small">No scoring yet.</div>'}
+function counterBox(name){const d=document.createElement('div');d.className='counter';const title=document.createElement('div');title.className='counter-name';title.textContent=name;const row=document.createElement('div');row.className='counter-row';const minus=document.createElement('button');minus.textContent='−';const val=document.createElement('div');val.className='count';val.textContent=state.counters[name]||0;const plus=document.createElement('button');plus.textContent='+';plus.className='plus';minus.addEventListener('click',()=>{state.counters[name]=Math.max(0,(state.counters[name]||0)-1);val.textContent=state.counters[name];save();renderStats()});plus.addEventListener('click',()=>{state.counters[name]=(state.counters[name]||0)+1;val.textContent=state.counters[name];save();renderStats()});row.append(minus,val,plus);d.append(title,row);return d}
+function renderCounters(){$('setPieceCounters').innerHTML='';counterNames.forEach(n=>$('setPieceCounters').appendChild(counterBox(n)));$('penaltyForCounter').innerHTML='';$('penaltyForCounter').appendChild(counterBox('Penalties for'));$('penaltyCounters').innerHTML='';reasons.forEach(n=>$('penaltyCounters').appendChild(counterBox('Penalty: '+n)))}
+function renderSubs(){$('subLog').innerHTML=state.subs.slice().reverse().map(s=>'<div class="logrow"><b>'+s.min+'′</b> · OFF '+playerLabel(s.off)+' → ON '+playerLabel(s.on)+'</div>').join('')||'<div class="small">No substitutions yet.</div>'}
+function calcPlayerStats(){return state.players.map((_,i)=>({i,tries:0,conv:0,convAtt:0,pk:0,pkAtt:0,points:0})).map(p=>{state.scores.filter(s=>s.side==='us').forEach(s=>{if(s.type==='try'&&s.scorer===p.i){p.tries++;p.points+=5}if(s.type==='try'&&s.kicker===p.i){p.convAtt++;if(s.converted){p.conv++;p.points+=2}}if(s.type==='penalty'&&s.scorer===p.i){p.pkAtt++;if(s.made){p.pk++;p.points+=3}}});return p})}
+function renderStats(){const sw=state.counters['Scrum won']||0,sl=state.counters['Scrum lost']||0,lw=state.counters['Lineout won']||0,ll=state.counters['Lineout lost']||0,pa=reasons.reduce((a,r)=>a+(state.counters['Penalty: '+r]||0),0);const pct=(a,b)=>a+b?Math.round(a/(a+b)*100)+'%':'—';$('teamStats').innerHTML='<div class="grid3"><div><b>Scrums</b><br>'+sw+' won / '+sl+' lost<br><span class="success">'+pct(sw,sl)+'</span></div><div><b>Lineouts</b><br>'+lw+' won / '+ll+' lost<br><span class="success">'+pct(lw,ll)+'</span></div><div><b>Penalties</b><br>For: '+(state.counters['Penalties for']||0)+'<br>Against: '+pa+'</div></div>';const ps=calcPlayerStats();$('playerStats').innerHTML=ps.map(p=>{const att=p.convAtt+p.pkAtt,made=p.conv+p.pk;return '<tr><td>'+playerLabel(p.i)+'</td><td>'+p.tries+'</td><td>'+p.conv+'</td><td>'+p.convAtt+'</td><td>'+p.pk+'</td><td>'+p.pkAtt+'</td><td><b>'+p.points+'</b></td><td>'+(att?Math.round(made/att*100)+'%':'—')+'</td></tr>'}).join('')}
+function renderReport(){if(!state.finalized)return;const [us,opp]=scoreTotals();const pa=reasons.reduce((a,r)=>a+(state.counters['Penalty: '+r]||0),0);const scoring=state.scores.map(s=>'<div class="logrow"><b>'+s.min+'′</b> · '+(s.side==='us'?state.ourTeam:state.opponent)+' · '+s.desc+'</div>').join('');const pens=reasons.filter(r=>state.counters['Penalty: '+r]).map(r=>r+': '+state.counters['Penalty: '+r]).join(' · ')||'None recorded';$('reportBody').innerHTML='<div class="small">'+(state.date||'')+'</div><div class="report-score">'+state.ourTeam+' '+us+' — '+opp+' '+state.opponent+'</div><div style="text-align:center">Halftime: '+(state.ht?state.ht[0]+'–'+state.ht[1]:'Not set')+'</div><hr><h3>Scoring Summary</h3>'+scoring+'<h3 style="margin-top:14px">Set Pieces & Discipline</h3><p>Scrums: '+state.counters['Scrum won']+' won / '+state.counters['Scrum lost']+' lost · Lineouts: '+state.counters['Lineout won']+' won / '+state.counters['Lineout lost']+' lost · Penalties for: '+state.counters['Penalties for']+' · Penalties against: '+pa+'</p><p class="small">'+pens+'</p><h3>Awards</h3><p>MVP: <b>'+awardName(state.awards.mvp)+'</b> · Best Forward: <b>'+awardName(state.awards.forward)+'</b> · Best Back: <b>'+awardName(state.awards.back)+'</b></p><h3>Substitutions</h3>'+state.subs.map(s=>'<div class="logrow">'+s.min+'′ · '+playerLabel(s.off)+' off → '+playerLabel(s.on)+' on</div>').join('')}
+function awardName(v){return v===''?'—':playerLabel(+v)}
+function renderAll(){$('ourTeam').value=state.ourTeam;$('opponent').value=state.opponent;$('matchDate').value=state.date;renderSquad();scoringOptions();fillSelect($('subOff'),[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]);fillSelect($('subOn'),[15,16,17,18,19,20,21,22]);awardOptions();renderScore();renderCounters();renderSubs();renderStats();renderReport()}
+$('scoreTeam').addEventListener('change',scoringOptions);$('scoreType').addEventListener('change',()=>{const isTry=$('scoreType').value==='try';$('convWrap').style.display=isTry?'block':'none';$('kickerWrap').style.display=isTry?'block':'none'});
+$('startMatch').addEventListener('click',()=>{document.querySelectorAll('[data-player]').forEach(inp=>state.players[+inp.dataset.player]=inp.value.trim()||('Player '+(+inp.dataset.player+1)));save();showPage('live')});
+$('addScore').addEventListener('click',()=>{const min=Math.max(0,Math.min(120,+$('scoreMin').value||0)),side=$('scoreTeam').value,type=$('scoreType').value;let scorer=side==='us'?+$('scorer').value:null,kicker=null,points=0,desc='',converted=false,made=false;if(type==='try'){points=5;converted=$('conversion').value==='made';if(converted)points+=2;kicker=(side==='us'&&converted)?+$('kicker').value:null;desc=(side==='us'?playerLabel(scorer):'Opponent')+' TRY'+(converted?' · converted'+(side==='us'?' by '+playerLabel(kicker):''):' · not converted')}else{made=true;points=3;desc=(side==='us'?playerLabel(scorer):'Opponent')+' PENALTY KICK'}state.scores.push({min,side,type,scorer,kicker,converted,made,points,desc});save();renderScore();renderStats()});
+$('undoScore').addEventListener('click',()=>{state.scores.pop();save();renderScore();renderStats()});$('setHT').addEventListener('click',()=>{state.ht=scoreTotals();save();renderScore()});
+$('addSub').addEventListener('click',()=>{state.subs.push({min:Math.max(0,Math.min(120,+$('subMin').value||0)),off:+$('subOff').value,on:+$('subOn').value});save();renderSubs()});
+['mvp','bestForward','bestBack'].forEach(id=>$(id).addEventListener('change',()=>{state.awards={mvp:$('mvp').value,forward:$('bestForward').value,back:$('bestBack').value};save()}));
+$('processFT').addEventListener('click',()=>{state.awards={mvp:$('mvp').value,forward:$('bestForward').value,back:$('bestBack').value};state.finalized=true;save();renderReport();showPage('report')});
+$('printReport').addEventListener('click',()=>window.print());
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function backup(){download('Red_Black_XV_'+(state.opponent||'match').replace(/\W+/g,'_')+'.json',JSON.stringify(state,null,2),'application/json')}
+$('exportBackup').addEventListener('click',backup);$('exportBackup2').addEventListener('click',backup);$('importBackup').addEventListener('click',()=>$('backupFile').click());$('backupFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);blankCounters();save();renderAll();alert('Match backup imported.')}catch(x){alert('That backup file could not be read.')}};r.readAsText(f)});
+$('exportCSV').addEventListener('click',()=>{const ps=calcPlayerStats();let rows=[['Player','Tries','Conversions','Conversion Attempts','Penalty Kicks','Penalty Attempts','Points','Kick %']];ps.forEach(p=>{let att=p.convAtt+p.pkAtt,m=p.conv+p.pk;rows.push([playerLabel(p.i),p.tries,p.conv,p.convAtt,p.pk,p.pkAtt,p.points,att?Math.round(m/att*100)+'%':''])});download('Red_Black_XV_stats.csv',rows.map(r=>r.map(x=>'\"'+String(x).replace(/\"/g,'\"\"')+'\"').join(',')).join('\n'),'text/csv')});
+$('newMatch').addEventListener('click',()=>{if(!confirm('Start a new match? Export a backup first if you want to keep this match.'))return;const keepPlayers=[...state.players],keepTeam=state.ourTeam;state={ourTeam:keepTeam,opponent:'Opponent',date:'',players:keepPlayers,scores:[],subs:[],counters:{},ht:null,awards:{mvp:'',forward:'',back:''},finalized:false};blankCounters();save();renderAll()});
+load();renderAll();
+})();
+</script>
+</body></html>
